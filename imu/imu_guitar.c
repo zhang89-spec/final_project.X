@@ -76,8 +76,9 @@ void GuitarIMU_readAll(int16_t* ax, int16_t* ay, int16_t* az,
 
 // --- GZ ???? (Directional Thresholds) ---
 #define GZ_BIAS                     416         // GZ ????????? (??)
+#define GX_BIAS                     -1000         // GZ ????????? (??)
 // Angular
-#define POSITIVE_THRESHOLD_RAW      13000       // GZ 14->15->13
+#define POSITIVE_THRESHOLD_RAW      10000       // GZ 14->15->13->10000
 #define NEGATIVE_THRESHOLD_RAW      -10000      // GZ -16->14->12->10
 #define GX_MAX      20000      // GX 13000->20000
 #define POSITIVE_THRESHOLD_GY      5000       // GY 8000-5000
@@ -97,7 +98,8 @@ void GuitarIMU_readAll(int16_t* ax, int16_t* ay, int16_t* az,
 typedef enum {
     IDLE, // ?????????
     SWING_DOWN, // ?????????????
-    SWING_UP // ?????????????
+    SWING_UP, // ?????????????
+    PALM_MUTE
 } StrumState;
 
 static StrumState current_state = IDLE;
@@ -154,7 +156,8 @@ const char* GuitarIMU_getStrum(uint8_t* velocity_out) {
     uint32_t mag_sq = calculate_gyro_mag_squared(raw_gx, raw_gy, raw_gz);
     // 2. ??????? GZ ?????????
     int16_t gz_diff = raw_gz - GZ_BIAS;
-
+    int16_t gx_diff = raw_gx - GX_BIAS;
+    
     const char* detected_strum = NULL; // ?????????
     
     if (current_state != IDLE) {
@@ -163,7 +166,40 @@ const char* GuitarIMU_getStrum(uint8_t* velocity_out) {
         }
     }
     
-    switch (current_state) {
+//     switch (current_state) {
+//         case IDLE:
+//             // ????: 1. ????? AND 2. ???????
+//             if (mag_sq > SQUARED_MAGNITUDE_THRESHOLD && abs(raw_gx) < GX_MAX && raw_ax>AX_MIN ) {
+//                 // ???? -> DOWNSTROKE (???) - ????
+//                 if (raw_gz < NEGATIVE_THRESHOLD_RAW && raw_gy > POSITIVE_THRESHOLD_GY ) {
+//                     pending_strum_direction = "STRUM_DOWN";
+//                     current_state = SWING_DOWN;
+//                     current_mag_sq_peak = mag_sq;
+// //                    *velocity_out = map_velocity(raw_gz);
+//                     // ???? -> UPSTROKE (???) - ????
+//                 } else if (raw_gz > POSITIVE_THRESHOLD_RAW && raw_gy < NEGATIVE_THRESHOLD_RAW ) {
+//                     pending_strum_direction = "STRUM_UP";
+//                     current_state = SWING_UP;
+//                     current_mag_sq_peak = mag_sq;
+// //                    *velocity_out = map_velocity(raw_gz);
+//                 }
+//             }
+//             break;
+//         case SWING_DOWN:
+//         case SWING_UP:
+//             // ?? GZ ?????? BIAS ???????????
+//             if (abs(gz_diff) < RESET_THRESHOLD) {
+//                 current_state = IDLE;
+//                 // trigger strum & calculate velocity
+//                 detected_strum = pending_strum_direction; 
+//                 *velocity_out = map_velocity(current_mag_sq_peak);
+//                 // reset
+//                 current_mag_sq_peak = 0;
+//                 pending_strum_direction = NULL;
+//             }
+//             break;
+//     }
+switch (current_state) {
         case IDLE:
             // ????: 1. ????? AND 2. ???????
             if (mag_sq > SQUARED_MAGNITUDE_THRESHOLD && abs(raw_gx) < GX_MAX && raw_ax>AX_MIN ) {
@@ -179,8 +215,12 @@ const char* GuitarIMU_getStrum(uint8_t* velocity_out) {
                     current_state = SWING_UP;
                     current_mag_sq_peak = mag_sq;
 //                    *velocity_out = map_velocity(raw_gz);
+                } 
+            } else if (mag_sq > SQUARED_MAGNITUDE_THRESHOLD && raw_gx > GX_MAX + 3500 && raw_gz < 5000 ) {
+                    pending_strum_direction = "PALM_MUTE";
+                    current_state = PALM_MUTE;
+//                    *velocity_out = map_velocity(raw_gz);
                 }
-            }
             break;
         case SWING_DOWN:
         case SWING_UP:
@@ -192,6 +232,15 @@ const char* GuitarIMU_getStrum(uint8_t* velocity_out) {
                 *velocity_out = map_velocity(current_mag_sq_peak);
                 // reset
                 current_mag_sq_peak = 0;
+                pending_strum_direction = NULL;
+            }
+            break;
+        case PALM_MUTE:  
+          if (abs(gx_diff) < RESET_THRESHOLD) {
+                current_state = IDLE;
+                // trigger strum & calculate velocity
+                detected_strum = pending_strum_direction; 
+                // reset
                 pending_strum_direction = NULL;
             }
             break;
