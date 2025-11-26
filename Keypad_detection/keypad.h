@@ -17,8 +17,8 @@
 #define BTN_PIN   PINC
 #define BTN1_MASK 0x01  // PC0
 #define BTN2_MASK 0x02  // PC1
-#define BTN3_MASK 0x03  // PC1
-#define BTN4_MASK 0x04  // PC1
+#define BTN3_MASK 0x04  // PC2
+#define BTN4_MASK 0x08  // PC3
 
 void keypad_init(void);
 char keypad_scan(void);

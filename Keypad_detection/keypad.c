@@ -2,6 +2,7 @@
 #include <avr/io.h>
 #include <util/delay.h>
 #include <string.h>
+#include "../avr-printf-main/uart.h"
 
 static uint8_t current_group = 0;
 static char next_chord[10];
@@ -14,9 +15,15 @@ static const char key_map[4][3] = {
     {'*','0','#'}
 };
 
-static const char* chord_map[2][12] = {
-    {"C","C#","D","D#","E","F","F#","G","G#","A","A#","B"},
-    {"Cm","C#m","Dm","D#m","Em","Fm","F#m","Gm","G#m","Am","A#m","Bm"}
+const char* chord_map[2][12] = {
+    {   // Group 1: majors + dominant 7ths (0..11)
+        "C",  "G",  "D",  "A",  "E",  "F",
+        "C7", "G7", "D7", "A7", "E7", "B7"
+    },
+    {   // Group 2: minors + sus & dim (12..23)
+        "Am",   "Em",   "Dm",   "Bm",   "F#m",  "Gm",
+        "Dsus4","Gsus4","Asus4","Esus4","Bdim","F#dim"
+    }
 };
 
 void keypad_init()
@@ -59,6 +66,7 @@ char keypad_scan()
             for (uint8_t c = 0; c < 3; c++) {
                 if (!(cols & (1 << c))) {
                     // Reset rows to high
+                    autoplay_state = 0;
                     ROW_PORT |= ROW_MASK;
                     return key_map[r][c];
                 }
@@ -76,26 +84,30 @@ void keypad_scan_group_buttons()
     uint8_t btns = BTN_PIN;
 
     // Button1 -> group 0
-    if (!(btns & BTN1_MASK)) {
+    if (!(btns & BTN2_MASK)) {
         _delay_ms(15); 
-        if (!(BTN_PIN & BTN1_MASK)) {   // check again
+        if (!(BTN_PIN & BTN2_MASK)) {   // check again
             current_group = 0;
+            // printf("Button1 pressed, current group: %d\r\n", current_group);
         }
     }
 
     // Button2 -> group 1
-    if (!(btns & BTN2_MASK)) {
+    if (!(btns & BTN1_MASK)) {
         _delay_ms(15);
-        if (!(BTN_PIN & BTN2_MASK)) {
+        if (!(BTN_PIN & BTN1_MASK)) {
             current_group = 1;
+            // printf("Button2 pressed, current group: %d\r\n", current_group);
         }
     }
+    
 
-    // Button3 -> palm mute
+    // Button3 -> autoplay
     if (!(btns & BTN3_MASK)) {
         _delay_ms(15);
         if (!(BTN_PIN & BTN3_MASK)) {
-            autoplay_state = 1 - autoplay_state;
+            autoplay_state = 1;
+            strcpy(next_chord, "AUTOKEY");
         }
     }
 
@@ -143,7 +155,7 @@ const char* keypad_get_chord()
     return next_chord;
 }
 
-uint8_t keypad_get_autoplay_state()
-{
-    return autoplay_state;
-}
+// uint8_t keypad_get_autoplay_state()
+// {
+//     return autoplay_state;
+// }

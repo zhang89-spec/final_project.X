@@ -24,7 +24,7 @@ int main(void)
             keypad_process(key);
         }
         const char* chord = keypad_get_chord();
-        uint8_t TBD = keypad_get_autoplay_state(); //TBD
+//        uint8_t TBD = keypad_get_autoplay_state(); //TBD
 
         /** IMU gesture **/
         uint8_t strum_velocity = 0;
