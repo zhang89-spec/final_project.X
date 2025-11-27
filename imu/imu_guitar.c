@@ -1,6 +1,6 @@
 #include "./imu_guitar.h"
 #include "./new_i2c.h"
-#include "./imu.h"
+// #include "./imu.h"
 #include <stdio.h>    // For printf
 #include <stdlib.h>   // For abs()
 #include <stdbool.h>  // For bool types
@@ -13,7 +13,7 @@ void GuitarIMU_init(uint8_t addr) {
     address = addr;
     NewI2C_init(1); //Initialize I2C, input 0 used to ignore the ERROR() function
     cli();
-    IMU_init(address); //initial imu using the found I2C address from the 
+//    IMU_init(address); //initial imu using the found I2C address from the 
     // previous task
     sei();
 }
@@ -80,7 +80,8 @@ void GuitarIMU_readAll(int16_t* ax, int16_t* ay, int16_t* az,
 // Angular
 #define POSITIVE_THRESHOLD_RAW      10000       // GZ 14->15->13->10000
 #define NEGATIVE_THRESHOLD_RAW      -10000      // GZ -16->14->12->10
-#define GX_MAX      20000      // GX 13000->20000
+#define GX_MAX      16000      // GX 13000->20000->16000
+#define GX_THRESHOLD      23500      // GX 13000->20000
 #define POSITIVE_THRESHOLD_GY      5000       // GY 8000-5000
 #define NEGATIVE_THRESHOLD_GY      -5000      // GY
 //Accelerate
@@ -166,39 +167,6 @@ const char* GuitarIMU_getStrum(uint8_t* velocity_out) {
         }
     }
     
-//     switch (current_state) {
-//         case IDLE:
-//             // ????: 1. ????? AND 2. ???????
-//             if (mag_sq > SQUARED_MAGNITUDE_THRESHOLD && abs(raw_gx) < GX_MAX && raw_ax>AX_MIN ) {
-//                 // ???? -> DOWNSTROKE (???) - ????
-//                 if (raw_gz < NEGATIVE_THRESHOLD_RAW && raw_gy > POSITIVE_THRESHOLD_GY ) {
-//                     pending_strum_direction = "STRUM_DOWN";
-//                     current_state = SWING_DOWN;
-//                     current_mag_sq_peak = mag_sq;
-// //                    *velocity_out = map_velocity(raw_gz);
-//                     // ???? -> UPSTROKE (???) - ????
-//                 } else if (raw_gz > POSITIVE_THRESHOLD_RAW && raw_gy < NEGATIVE_THRESHOLD_RAW ) {
-//                     pending_strum_direction = "STRUM_UP";
-//                     current_state = SWING_UP;
-//                     current_mag_sq_peak = mag_sq;
-// //                    *velocity_out = map_velocity(raw_gz);
-//                 }
-//             }
-//             break;
-//         case SWING_DOWN:
-//         case SWING_UP:
-//             // ?? GZ ?????? BIAS ???????????
-//             if (abs(gz_diff) < RESET_THRESHOLD) {
-//                 current_state = IDLE;
-//                 // trigger strum & calculate velocity
-//                 detected_strum = pending_strum_direction; 
-//                 *velocity_out = map_velocity(current_mag_sq_peak);
-//                 // reset
-//                 current_mag_sq_peak = 0;
-//                 pending_strum_direction = NULL;
-//             }
-//             break;
-//     }
 switch (current_state) {
         case IDLE:
             // ????: 1. ????? AND 2. ???????
@@ -216,7 +184,7 @@ switch (current_state) {
                     current_mag_sq_peak = mag_sq;
 //                    *velocity_out = map_velocity(raw_gz);
                 } 
-            } else if (mag_sq > SQUARED_MAGNITUDE_THRESHOLD && raw_gx > GX_MAX + 3500 && raw_gz < 5000 ) {
+            } else if (mag_sq > SQUARED_MAGNITUDE_THRESHOLD && raw_gx > GX_THRESHOLD && raw_gz < 5000 ) {
                     pending_strum_direction = "PALM_MUTE";
                     current_state = PALM_MUTE;
 //                    *velocity_out = map_velocity(raw_gz);

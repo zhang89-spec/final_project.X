@@ -33,15 +33,19 @@ void uart_protocol_init() {
     uart1_init(51);
 }
 
-void send_chord_gesture(const char* chord, const char* gesture, uint8_t strum_velocity) {
+void send_chord_gesture(const char* chord, const char* gesture, uint8_t strum_velocity, uint8_t volume) {
     char velocity_str[4];
+    char volume_str[4];
     // uint8_t2char
     snprintf(velocity_str, sizeof(velocity_str), "%u", strum_velocity); 
+    snprintf(volume_str, sizeof(volume_str), "%u", volume);
     // ??? C#|FULL_UP\n
     uart1_send_string(chord);
     uart1_send_char('|');
     uart1_send_string(gesture);
     uart1_send_char('|');
     uart1_send_string(velocity_str);
+    uart1_send_char('|');
+    uart1_send_string(volume_str);
     uart1_send_char('\n');
 }

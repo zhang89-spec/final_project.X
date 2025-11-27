@@ -15,13 +15,19 @@
 #define BTN_DDR   DDRC
 #define BTN_PORT  PORTC
 #define BTN_PIN   PINC
+#define BTN4_DDR   DDRD
+#define BTN4_PORT  PORTD
+#define BTN4_PIN   PIND
+
 #define BTN1_MASK 0x01  // PC0
 #define BTN2_MASK 0x02  // PC1
 #define BTN3_MASK 0x04  // PC2
-#define BTN4_MASK 0x08  // PC3
+#define BTN4_MASK 0x08  // PD3
+
+extern volatile uint8_t program_PAUSED; // 0 = RUNNING, 1 = PAUSED
 
 void keypad_init(void);
-char keypad_scan(void);
+void keypad_scan(void);
 
 void keypad_scan_group_buttons(void);
 uint8_t keypad_get_autoplay_state();

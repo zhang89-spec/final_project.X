@@ -24,7 +24,25 @@ const char* chord_map[2][12] = {
         "Am",   "Em",   "Dm",   "Bm",   "F#m",  "Gm",
         "Dsus4","Gsus4","Asus4","Esus4","Bdim","F#dim"
     }
+    
 };
+
+// const char* chord_map[2][12] = {
+//     {   // Group 1: majors + dominant 7ths (0..11)
+//         "F#m",  "G"    ,  "Am",  
+//         "C"  ,  "F#dim",  "F",
+//         "C7" ,  "G7"   ,  "D7", 
+//         "A7" ,  "E7"   ,  "B7"
+//     },
+//     {   // Group 2: minors + sus & dim (12..23)
+//         "C",   "G",   "Am",   
+//         "Em",   "Dm",  "Gm",
+//         "Dsus4","Gsus4","Asus4",
+//         "Esus4","Bdim","F#dim"
+//     }
+    
+// };
+
 
 void keypad_init()
 {
@@ -38,8 +56,10 @@ void keypad_init()
 
     //1X4
     // Group buttons PC0?PC1 ?? + ??
-    BTN_DDR &= ~(BTN1_MASK | BTN2_MASK | BTN3_MASK | BTN4_MASK);
-    BTN_PORT |= (BTN1_MASK | BTN2_MASK | BTN3_MASK | BTN4_MASK);
+    BTN_DDR &= ~(BTN1_MASK | BTN2_MASK | BTN3_MASK);
+    BTN4_DDR &= ~BTN4_MASK;
+    BTN_PORT |= (BTN1_MASK | BTN2_MASK | BTN3_MASK);
+    BTN4_PORT |= BTN4_MASK;
 }
 
 char keypad_scan()
@@ -53,8 +73,6 @@ char keypad_scan()
         ROW_PORT |= ROW_MASK; 
         // Set row (r+4) low
         ROW_PORT &= ~(1 << (r + 4));
-
-        _delay_us(5);
 
         // Read columns (PB0..PB2)
         uint8_t cols = (COL_PIN & COL_MASK);
@@ -84,18 +102,18 @@ void keypad_scan_group_buttons()
     uint8_t btns = BTN_PIN;
 
     // Button1 -> group 0
-    if (!(btns & BTN2_MASK)) {
+    if (!(btns & BTN1_MASK)) {
         _delay_ms(15); 
-        if (!(BTN_PIN & BTN2_MASK)) {   // check again
+        if (!(BTN_PIN & BTN1_MASK)) {   // check again
             current_group = 0;
             // printf("Button1 pressed, current group: %d\r\n", current_group);
         }
     }
 
     // Button2 -> group 1
-    if (!(btns & BTN1_MASK)) {
+    if (!(btns & BTN2_MASK)) {
         _delay_ms(15);
-        if (!(BTN_PIN & BTN1_MASK)) {
+        if (!(BTN_PIN & BTN2_MASK)) {
             current_group = 1;
             // printf("Button2 pressed, current group: %d\r\n", current_group);
         }
@@ -112,12 +130,12 @@ void keypad_scan_group_buttons()
     }
 
     // Button4 -> group 1
-    if (!(btns & BTN4_MASK)) {
-        _delay_ms(15);
-        if (!(BTN_PIN & BTN4_MASK)) {
-            // todo 
-        }
-    }
+//    if (!(btns & BTN4_MASK)) {
+//        _delay_ms(15);
+//        if (!(BTN_PIN & BTN4_MASK)) {
+//            // todo 
+//        }
+//    }
 }
 
 void keypad_process(char key)
@@ -154,8 +172,3 @@ const char* keypad_get_chord()
 {
     return next_chord;
 }
-
-// uint8_t keypad_get_autoplay_state()
-// {
-//     return autoplay_state;
-// }
