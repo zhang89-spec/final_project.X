@@ -1,6 +1,5 @@
 #include "./imu_guitar.h"
 #include "./new_i2c.h"
-// #include "./imu.h"
 #include <stdio.h>    // For printf
 #include <stdlib.h>   // For abs()
 #include <stdbool.h>  // For bool types
@@ -9,11 +8,41 @@
 
 static uint8_t address;
 
+// 定义 LSM6DSO 的 I2C 地址和关键寄存器地址 (方便阅读)
+#define LSM6DS0_ADDR    0x6B
+#define CTRL1_XL_REG    0x10
+#define CTRL2_G_REG     0x11
+#define CTRL3_C_REG     0x12
+
+/**
+ * @brief 初始化 LSM6DSO IMU 传感器，使用 NewI2C API
+ * @param addr IMU 的 I2C 地址 (例如 0x6B)
+ */
+void IMU_init(uint8_t addr)
+{
+    // 1. CTRL1_XL (0x10): 加速度计控制
+    // Data: 0x60 -> ODR 416Hz, Full Scale ±4g (这是基于您提供的外部代码做的推断)
+    NewI2C_writeRegister(addr, 0x60, CTRL1_XL_REG);
+    printf("IMU: Set Accel ODR 416Hz, FS 4g\r\n");
+
+    // 2. CTRL2_G (0x11): 陀螺仪控制
+    // Data: 0x60 -> ODR 416Hz, Full Scale ±2000dps
+    NewI2C_writeRegister(addr, 0x60, CTRL2_G_REG);
+    printf("IMU: Set Gyro ODR 416Hz, FS 2000dps\r\n");
+    
+    // 3. CTRL3_C (0x12): 通用控制
+    // Data: 0x44 -> BDU=1 (Block Data Update), IF_INC=1 (地址自增)
+    NewI2C_writeRegister(addr, 0x44, CTRL3_C_REG);
+    printf("IMU: Set BDU and IF_INC\r\n");
+    
+    // 注意：所有错误处理（Start/Write/Stop 失败）都已在 NewI2C_writeRegister 内部处理。
+}
+
 void GuitarIMU_init(uint8_t addr) {
     address = addr;
     NewI2C_init(1); //Initialize I2C, input 0 used to ignore the ERROR() function
     cli();
-//    IMU_init(address); //initial imu using the found I2C address from the 
+   IMU_init(address); //initial imu using the found I2C address from the 
     // previous task
     sei();
 }

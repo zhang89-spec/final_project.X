@@ -23,6 +23,7 @@
 #include <stdint.h>
 
 void GuitarIMU_init(uint8_t addr);
+void imu_init(uint8_t addr);
 
 int16_t GuitarIMU_readAccX();
 int16_t GuitarIMU_readAccY();
